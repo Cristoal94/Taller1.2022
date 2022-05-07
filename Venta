@@ -1,0 +1,30 @@
+public class Venta {
+	
+	private Producto producto;
+	private int cantidadVecesComprada;
+
+	public Venta(Producto producto, int cantidadVecesComprada) {
+		this.cantidadVecesComprada = cantidadVecesComprada;
+		this.producto = producto;
+	}
+
+	public int getCantidadVecesComprada() {
+		return cantidadVecesComprada;
+	}
+
+
+	public void setCantidadVecesComprada(int cantidadVecesComprada) {
+		this.cantidadVecesComprada = cantidadVecesComprada;
+	}
+
+
+	public Producto getProducto() {
+		return producto;
+	}
+
+
+	public void setProducto(Producto producto) {
+		this.producto = producto;
+	}
+
+}
