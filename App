@@ -1,0 +1,470 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.IOException;
+import java.util.Scanner;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        ListaClientes Clientes = new ListaClientes(1000);
+        ListaProductos Productos = new ListaProductos(1000);
+        ListaVentas Ventas = new ListaVentas(1000);
+        LecturaClientes(Clientes);
+        LecturaProducto(Productos);
+        LecturaVenta(Ventas, Productos);
+        Menu(Clientes, Productos, Ventas);
+        escritura(Clientes, Productos, Ventas);
+    }
+    /**
+     * Read and save parameters nombre,pass,saldo, correo.
+     * @param Clientes is the list of clients
+     * @throws IOException
+     */
+    public static void LecturaClientes(ListaClientes Clientes) throws IOException {
+
+        Scanner scan = new Scanner(new File("Clientes.txt"));
+        while (scan.hasNextLine()) {
+            String linea = scan.nextLine();
+            String [] partes = linea.split(",");
+            String nombre = partes[0];
+            String pass = partes[1];
+            int saldo = Integer.parseInt(partes[2]);
+            String correo = partes[3];
+            Cliente c = new Cliente(nombre, pass, saldo, correo);
+            Clientes.agregarCliente(c);
+        }
+    }
+    /**
+     * Read and save parameters nombreProducto, precio, stock.
+     * @param Productos is the list of products
+     * @throws IOException
+     */
+    public static void LecturaProducto(ListaProductos Productos) throws IOException {
+
+        Scanner scan = new Scanner(new File("Productos.txt"));
+        while (scan.hasNextLine()) {
+            String linea = scan.nextLine();
+            String[] partes = linea.split(",");
+            String nombreProducto = partes[0];
+            int precio = Integer.parseInt(partes[1]);
+            int stock = Integer.parseInt(partes[2]);
+            Producto p = new Producto(nombreProducto, precio, stock);
+            Productos.agregarProducto(p);
+        }
+    }
+
+    /**
+     * Read and save parameters NombreProducto, cantidadVecesComprada.
+     * @param Ventas is the list of sell's
+     * @param Productos is the list of products 
+     * @throws IOException
+     */
+    public static void LecturaVenta(ListaVentas Ventas, ListaProductos Productos) throws IOException {
+        Scanner scan = new Scanner(new File("Productos.txt"));
+        while (scan.hasNextLine()) {
+            String linea = scan.nextLine();
+            String[] partes = linea.split(",");
+            String nombreProducto = partes[0];
+            int cantidadVecesComprada = Integer.parseInt(partes[1]);
+            Producto p = Productos.buscar(nombreProducto);
+            Venta v = new Venta(p, cantidadVecesComprada);
+            Ventas.agregarVenta(v);
+        }
+
+    }
+
+    /**
+     * Validate user input
+     * @param Clientes is the list of clients
+     * @param nombreUsuario is the name if the customer
+     * @param pass is the password of the customer
+     * @throws IOException
+     */
+    public static void validarInicioUsuario(ListaClientes Clientes, String nombreUsuario, String pass)
+            throws IOException {
+        int i = 0;
+        while (i < Clientes.getCant() && !Clientes.getListaCliente(i).getNombre().equals(nombreUsuario)) {
+            i++;
+        }
+        if (i == Clientes.getCant())
+            throw new IOException("El rut no se encuentra en el sistema.");
+        if (!Clientes.getListaCliente(i).getPass().equals(pass))
+            throw new IOException("La contraseña es incorrecta.");
+    }
+
+    /**
+     * Is the menu principal that calls the user menu, the admin menu and when registering
+     * @param Clientes is the list of clients
+     * @param Productos is the list of products
+     * @param Ventas is the list of sales 
+     */
+    private static void Menu(ListaClientes Clientes, ListaProductos Productos, ListaVentas Ventas) {
+
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Desea iniciar sesion? si es si ingrese s 's' ");
+        String ingreso = scan.nextLine();
+        if (ingreso.equalsIgnoreCase("s")) {
+            while (true) {
+                System.out.println("Si es ADMIN ingrese  : ADMIN y de contraseña : NYAXIO");
+                System.out.println("Ingrese su nombre de usuario : ");
+                String usuario = scan.nextLine(); 
+                System.out.println("Ingrese su contraseña: ");
+                String contraseña = scan.nextLine();
+                if (usuario.equals("ADMIN") && contraseña.equals("NYAXIO")) {
+                    MenuADMIN(Clientes, Productos, Ventas);
+                    break;
+                }
+                try {
+                    validarInicioUsuario(Clientes, usuario, contraseña);
+                    MenuUsuario(Clientes, Productos, Ventas, usuario);
+                    break;
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                    System.out.println("Si desea intentarlo de nuevo, ingrese (r).");
+                    System.out.println("Si quiere cerrar el sistema, ingrese cualquier tecla/número.");
+                    if (scan.nextLine().equals("r"))
+                        registrar(Clientes);
+                    break;
+                }
+            }
+        }
+        scan.close();
+
+    }
+
+    /**
+     * Is the user menu where the options are displayed
+     * @param Clientes is the list of clients
+     * @param Productos is the list of products
+     * @param Ventas is the list of sales
+     * @param usuario is the name of the customer
+     */
+    public static void MenuUsuario(ListaClientes Clientes, ListaProductos Productos, ListaVentas Ventas, String usuario) {
+        Scanner scan = new Scanner(System.in);
+        Cliente cliente = Clientes.buscar(usuario);
+        System.out.println("-----------MENU USUARIO---------------");
+        System.out.println("[1] Elegir Producto.");
+        System.out.println("[2] Cambiar Contraseña.");
+        System.out.println("[3] Ver Catalogo.");
+        System.out.println("[4] Ver Saldo.");
+        System.out.println("[5] Recargar Saldo.");
+        System.out.println("[6]Ver Carrito.");
+        System.out.println("[7}Quitar de carrito.");
+        System.out.println("[8]Pagar Carrito.");
+        System.out.println("Para cerrar el sistema ingrese '0'.");
+        System.out.println("Ingrese la opción que desea realizar: ");
+        String opcion = scan.nextLine();       
+        while (!opcion.equals("0")) {
+            try {
+                if (opcion.equals("1")) {
+
+                    System.out.println("Ingrese el nombre de producto que quiere : ");
+                    String p = scan.nextLine(); 
+                    Producto producto = Productos.buscar(p);
+                    if (producto != null) {
+                        if (producto.getStock() > 0) {
+                            System.out.println("Ingrese la cantidad que quiere");
+                            int c = Integer.parseInt(scan.nextLine()); 
+                            int c1 = producto.getStock()-c;  
+                            if(c1>0){
+                            	Producto p1 = new Producto(producto.getNombreProducto(), producto.getPrecio(),c); 
+                                if(cliente.getCarrito().agregarProducto(p1) != false){
+                                    cliente.getCarrito().agregarProducto(p1); 
+                                    System.out.println("Se agrego el producto, "+p1.getNombreProducto());
+                                }
+                                else{
+                                    System.out.println("Error al agregar producto");
+                                }
+                            }
+                            else{
+                                System.out.println("La cantidad ingresada supera el stock");
+                            }                  
+                            
+                        }else {
+                            System.out.println("No tenemos stock");
+                        }
+                    } else {
+
+                        System.out.println("No se encontro el producto");
+                    }
+
+                }else if (opcion.equals("2")) {
+
+                        System.out.println("Ingrese contraseña nueva");
+                        String passnueva = scan.nextLine();
+                        cliente.setPass(passnueva);
+                        System.out.println("Contraseña cambiada");
+
+                }else if (opcion.equals("3")) {
+
+                    System.out.println("Estos son los productos que tenemos: ");
+                    for (int i = 0; i < Productos.getCant(); i++) {
+                        if (Productos.getListaProducto(i).getStock() > 0) {
+                            System.out.println("|" + Productos.getListaProducto(i).getNombreProducto()+" |" + "|Valor:"
+                            + Productos.getListaProducto(i).getPrecio() + "|");                            
+                        }
+                    }
+
+                }else if (opcion.equals("4")) {
+                        System.out.println("Saldo :" + cliente.getSaldo());
+
+                }else if (opcion.equals("5")) {
+                    System.out.println("Ingrese cantidad de saldo a recargar :");
+                    int recargar = Integer.parseInt(scan.nextLine());
+                    if (cliente != null) {
+                        cliente.setSaldo(cliente.getSaldo() + recargar);
+                        System.out.println("Saldo recargado de: " + cliente.getNombre() + " Su nuevo saldo es: "
+                                + cliente.getSaldo());
+                    } else {
+                        System.out.println("No se pudo recargar saldo");
+                    }
+
+                }else if (opcion.equals("6")) {
+                    String text=" ";
+                    for (int i = 0; i < cliente.getCarrito().getCant(); i++) {
+                        text +="Nombre :" + cliente.getCarrito().getListaProducto(i).getNombreProducto()+
+                        		" Precio :"+cliente.getCarrito().getListaProducto(i).getPrecio()+
+                        		" Cantidad :"+cliente.getCarrito().getListaProducto(i).getStock() + "\n";
+                    }
+                    System.out.println(text);
+
+                }else if (opcion.equals("7")) {
+                    System.out.println("Ingrese nombre de producto a eliminar ");
+                	String produc = scan.nextLine();
+                    Producto producto = Productos.buscar(produc);
+                	if(cliente.getCarrito().buscar(produc)!=null) {
+                        if(cliente.getCarrito().eliminarProducto1(producto) == true){
+                            cliente.getCarrito().eliminarProducto1(producto); 
+                            System.out.println("El producto "+produc+", ha sido eliminado");  
+                        }   
+                	}
+                	else {
+                		System.out.println("El nombre del producto ingresado no se encuentra");
+                	}                 
+
+                }else if (opcion.equals("8")) {
+                    int suma = 0;
+                    for(int i= 0; i< cliente.getCarrito().getCant();i++){
+                        suma =+cliente.getCarrito().getListaProducto(i).getPrecio()*cliente.getCarrito().getListaProducto(i).getStock();                
+                    }
+                    if((cliente.getSaldo() - suma) > 0 ){
+                        cliente.setSaldo(cliente.getSaldo()-suma);
+                        for(int i =0;i<cliente.getCarrito().getCant();i++) {
+                        	Venta v= Ventas.buscar(cliente.getCarrito().getListaProducto(i).getNombreProducto());
+                            System.out.println("Viejo"+v.getCantidadVecesComprada());
+                        	v.setCantidadVecesComprada(v.getCantidadVecesComprada()+cliente.getCarrito().getListaProducto(i).getStock());
+                            System.out.println("Nuevo"+v.getCantidadVecesComprada());
+                        }
+                    }
+                    else{
+                        System.out.println("No tiene el suficiente saldo para hacer la compra ");
+                    }
+                }
+                System.out.println("Ingrese su opcion : "); //<---
+                opcion = scan.nextLine();
+
+            } catch (NullPointerException ex) {
+                System.out.println(ex.getMessage());
+            }  
+        }
+        System.out.println("Cerrando el sistema"); 
+        scan.close();
+    }
+
+    /**
+     * It’s the admin menu
+     * @param Clientes is the list of clients
+     * @param Productos is the list of products
+     * @param Ventas is the list of sales
+     */
+    public static void MenuADMIN(ListaClientes Clientes, ListaProductos Productos, ListaVentas Ventas) {
+        Scanner scan = new Scanner(System.in);
+        System.out.println("----MENU ADMIN----");
+        System.out.println("Bienvenido a su menu, a continuación estan las opciones que puede realizar:");
+        System.out.println("[1]Bloquear Usuario.");
+        System.out.println("[2]Ver Historial de compras.");
+        System.out.println("[3]Agregar Producto.");
+        System.out.println("[4]Agregar Stock.");
+        System.out.println("[5]Actualizar Datos de producto.");
+        System.out.println("Para cerrar el sistema ingrese '0'.");
+        System.out.println("Ingrese la opción que desea realizar: ");
+        String opcion = scan.nextLine();
+        while (!opcion.equals("0")) {
+            try {
+                if (opcion.equals("1")) {
+                    System.out.println("Ingrese Usuario a bloquear :");
+                    String n = scan.nextLine();
+                    Cliente cliente = Clientes.buscar(n);
+                    if (cliente != null) {
+                        Clientes.eliminarCliente(n);
+                        System.out.println("El cliente :" + n + " ha sido eliminado");
+                        break;
+                    } else {
+                        System.out.println("Error en econtrar el cliente");
+                    }
+
+                }else if (opcion.equals("2")) {
+                    System.out.println(Historial(Ventas));
+                
+                }else if (opcion.equals("3")) {
+                    System.out.println("Ingrese el nuevo Producto :");
+                    String product = scan.nextLine();
+                    System.out.println("Ingrese el precio del producto : ");
+                    int prec = Integer.parseInt(scan.nextLine());
+                    System.out.println("Ingrese el stock del producto : ");
+                    int stock = Integer.parseInt(scan.nextLine());
+                    Producto producto = new Producto(product, prec, stock);
+                    if (producto != null) {
+                        Productos.agregarProducto(producto);
+                        System.out.println("El producto ha sido agregado exitosamento");
+                    }
+                
+                }else if (opcion.equals("4")) {
+                    System.out.println("Ingrese nombre del prodcuto que quiere agregar stock: ");
+                    String p = scan.nextLine();
+                    Producto producto = Productos.buscar(p);
+                    if (producto != null) {
+                        System.out.println("Ingrese el stock");
+                        int stock = Integer.parseInt(scan.nextLine());
+                        producto.setStock(producto.getStock() + stock);
+                        System.out.println("Stock agregado");
+                        break;
+                    } else {
+                        System.out.println("No se pudo agregar stock");
+                    }
+                
+                }else if (opcion.equals("5")) {
+                    System.out.println("Ingrese nombre del producto que quiere actualizar datos: ");
+                    String p = scan.nextLine();
+                    Producto producto = Productos.buscar(p);
+                    if (producto != null) {
+                        System.out.println("Ingrese el precio del producto");
+                        int p1 = Integer.parseInt(scan.nextLine());
+                        producto.setNombreProducto(p);
+                        producto.setPrecio(p1);
+                        System.out.println("Se actualizaron los datos exitosamente");
+                        break;
+                    } else {
+                        System.out.println("Error en algun dato");
+                    }
+                }
+                System.out.println("Ingrese su opcion : ");
+                opcion = scan.nextLine();
+
+            } catch (NullPointerException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+        scan.close();
+
+    }
+
+    /**
+     * Register your new customers 
+     * @param Clientes is the list of clients
+     */
+    public static void registrar(ListaClientes Clientes) {
+
+        System.out.println("||Bienvenido al menu registrar ingrese sus datos||");
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Ingrese su nombre de usuario: ");
+        String nombre1 = scan.nextLine();
+        System.out.println("Ingrese su contraseña: ");
+        String pass1 = scan.nextLine();
+        System.out.println("Ingrese su Saldo : ");
+        int saldo1 = Integer.parseInt(scan.nextLine());
+        System.out.println("Ingrese su correo : ");
+        String correo1 = scan.nextLine();
+        Cliente cliente = new Cliente(nombre1, pass1, saldo1, correo1);
+        try {
+            Clientes.agregarCliente(cliente);
+            System.out.println("Ya estas agregado " + nombre1);
+        } catch (Exception e) {
+            System.out.println("Error en algun dato");
+        }
+        scan.close();
+
+    }
+
+    /**
+     * Write the new files 
+     * @param clientes is the list of clients
+     * @param productos is the list of products
+     * @param ventas is the list of sales
+     */
+    public static void escritura(ListaClientes clientes, ListaProductos productos, ListaVentas ventas) {
+        try {
+            String text = "";
+            BufferedWriter cliente = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("Clientes.txt")));
+            for (int i = 0; i < clientes.getCant(); i++) {
+                if(i == clientes.getCant()-1){
+                    text += clientes.getListaCliente(i).getNombre() + "," 
+                    + clientes.getListaCliente(i).getPass() + "," 
+                    +clientes.getListaCliente(i).getSaldo() + "," 
+                    + clientes.getListaCliente(i).getCorreo();
+                }else{
+                    text += clientes.getListaCliente(i).getNombre() + "," 
+                    + clientes.getListaCliente(i).getPass() + "," 
+                    +clientes.getListaCliente(i).getSaldo() + "," 
+                    + clientes.getListaCliente(i).getCorreo() + "\n";
+                }
+            }
+            cliente.write(text);
+            cliente.close();
+            
+            String text2 = "";
+            BufferedWriter producto = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("Productos.txt")));
+            for (int j = 0; j < productos.getCant(); j++) {
+                if(j == productos.getCant()-1){
+                    text2 += productos.getListaProducto(j).getNombreProducto() + ","
+                        + productos.getListaProducto(j).getPrecio() + ","
+                        + productos.getListaProducto(j).getStock();                    
+                }else{
+                    text2 += productos.getListaProducto(j).getNombreProducto() + ","
+                        + productos.getListaProducto(j).getPrecio() + ","
+                        + productos.getListaProducto(j).getStock() + "\n";                    
+                }
+            }
+            producto.write(text2);
+            producto.close();
+
+            String text3 = "";
+            BufferedWriter venta = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("Ventas.txt")));
+            for (int k = 0; k < ventas.getCant(); k++) {
+                if (k == ventas.getCant()-1 ){
+                  text3 += ventas.getListaVenta(k).getProducto().getNombreProducto() + ","
+                      + ventas.getListaVenta(k).getCantidadVecesComprada();
+                }
+                else{
+                    text3 += ventas.getListaVenta(k).getProducto().getNombreProducto() + ","
+                      + ventas.getListaVenta(k).getCantidadVecesComprada() + "\n";
+                }
+            }
+            venta.write(text3);
+            venta.close();
+        
+            
+        } catch (IOException e) {
+            System.out.println("Error en algun dato");
+        }   
+    }
+   /**
+    * Displays the history of sales 
+    * @param ventas is the list of sales
+    * @return a string
+    */
+    public static String Historial(ListaVentas ventas) {
+        String text = "";
+        for (int i = 0; i < ventas.getCant(); i++) {
+            Venta v = ventas.getListaVenta(i);
+            if (v != null) {
+                text += "Nombre Producto: " + v.getProducto().getNombreProducto()
+                        + " a sido comprado: " + v.getCantidadVecesComprada() + "\n";
+
+            }
+        }
+        return text;
+    }
+
+}
