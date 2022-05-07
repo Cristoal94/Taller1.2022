@@ -1,0 +1,86 @@
+public class ListaClientes {
+    private int cant;
+    private int max;
+    private Cliente [] lc;
+
+    public ListaClientes(int max){
+        this.max=max;
+        this.cant=0;
+        lc = new Cliente[max];
+     }
+
+    public boolean agregarCliente(Cliente cliente){
+        if (cant==max){
+            return false;
+        }
+        else{
+            lc[cant] = cliente;
+            cant++;
+            return true;
+        }
+
+    }
+
+    public Cliente buscar(String nombre){
+        for (int i = 0; i < this.cant; i++) {
+            if (lc[i].getNombre().equals(nombre)) 
+            return lc[i];
+            }
+            return null;
+        }
+        
+    public int getCant(){
+        return cant;
+    }
+
+    public Cliente buscarPass(String pass){
+        for (int i = 0; i < this.cant; i++) {
+            if (lc[i].getPass().equals(pass)) 
+            return lc[i];
+            }
+            return null;
+        }
+        
+
+    public boolean eliminarCliente(String nombre){
+	    int indice = indexNombre(nombre);
+	    if (indice==-1){
+	         return false;
+	    }
+	    else{
+	        for (int i = indice; i < cant-1; i++) {
+	            lc[i]=lc[i+1];
+	        }
+	        cant--;
+	        return true;
+	    }
+	}
+
+        public int indexNombre(String nombre){
+	        for (int i = 0; i < cant; i++) {
+	            if (lc[i]!=null){
+	                if (lc[i].getNombre().equals(nombre)){
+	                    return i;
+	                }
+	            }
+	        }
+	        return -1;
+	    }
+
+    @Override
+	public String toString(){
+	    String text = "";
+	    for (int i = 0; i < cant; i++) {
+	        text+= lc[i].toString()+"\n";
+	    }
+	    return text;
+	}
+
+    public Cliente getListaCliente(int i){
+		if(i>=0 && i<cant) {
+			return lc[i];
+		}
+        return null;
+    }   
+
+}
