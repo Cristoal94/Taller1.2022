@@ -1,0 +1,3 @@
+Computador hp,1000,50
+Telefono nokia,500,200
+MouseGamer,145,670
