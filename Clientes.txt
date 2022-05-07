@@ -1,0 +1,3 @@
+Danni,a,13000,Danni@gmail.com
+Juanitox,a,500000,a@gmail.com
+Cristobal,a,500000,cristo@gmail.com
